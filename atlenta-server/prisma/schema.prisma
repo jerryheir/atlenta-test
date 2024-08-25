@@ -1,0 +1,91 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Priority {
+  low
+  medium
+  high
+}
+
+enum Status {
+  todo
+  in_progress
+  review
+  completed
+}
+
+model User {
+  id            String        @id @default(uuid())
+  first_name          String
+  last_name          String
+  email          String         @unique
+  password       String
+  projects      Project[]     @relation("ProjectMembers")
+  admin_projects  Project[]      @relation("ProjectAdmin") 
+  created_at     DateTime      @default(now())
+  comments Comment[] 
+
+  @@map("users")
+}
+ 
+
+model Comment {
+  id        String   @id @default(uuid())
+  user_id    String
+  taskId    String
+  details   String
+  created_at     DateTime      @default(now())
+  
+  user      User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@map("comments")
+}
+
+model Task {
+  id         String    @id @default(uuid())
+  name       String
+  description       String 
+  priority   Priority
+  status     Status
+  project_id  String
+  created_at     DateTime      @default(now())
+  updated_at       DateTime        @default(now()) @updatedAt
+  
+  project    Project   @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  comments   Comment[]
+  
+  @@map("tasks")
+}
+
+model Activity {
+  id         String    @id @default(uuid())
+  description String
+  project_id   String
+  created_at     DateTime      @default(now())
+
+  project    Project    @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  
+  @@map("activities")
+} 
+
+model Project {
+  id         String    @id @default(uuid())
+  name       String
+  admin_id    String
+  created_at     DateTime      @default(now())
+  updated_at       DateTime        @default(now()) @updatedAt
+
+  admin      User      @relation("ProjectAdmin", fields: [admin_id], references: [id], onDelete: Cascade)
+  members    User[]    @relation("ProjectMembers")
+  tasks      Task[]
+  activities Activity[] 
+
+  @@map("projects")
+}
